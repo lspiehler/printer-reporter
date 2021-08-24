@@ -1,0 +1,9 @@
+POST https://httpreport.lcmchealth.org/printers HTTP/1.1
+content-type: application/json
+
+{
+    "COMPUTERNAME": "ITS-LYAS",
+    "printers": [
+        "\\\\servername\\this is a test"
+    ]
+}
