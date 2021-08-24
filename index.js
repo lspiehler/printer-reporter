@@ -4,6 +4,8 @@ const routes = require("./routes.js");
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const swaggerDocument = YAML.load('swagger.yml');
+const requestIp = require('request-ip');
+app.use(requestIp.mw())
 
 app.use(express.urlencoded({extended: true})); 
 app.use(express.json());

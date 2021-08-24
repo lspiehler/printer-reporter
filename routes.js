@@ -1,4 +1,5 @@
 const database = require('./database');
+const util = require('util')
 
 var appRouter = function (app) {
     app.get('/printer_report_API.vbs', function(req, res){
@@ -6,19 +7,23 @@ var appRouter = function (app) {
         res.download(file); // Set disposition and send it.
     });
     app.post("/printers", function(req, res) {
-        console.log(req.body.printers);
+        console.log(util.inspect(req.body, false, null, true /* enable colors */))
         let sqlprinters = [];
+        let userou = req.body.userdn.split(',');
+        userou.shift();
+        let computerou = req.body.computerdn.split(',');
+        computerou.shift();
         for(let i = 0; i <= req.body.printers.length - 1; i++) {
             let splitprinter = req.body.printers[i].split('\\');
             if(splitprinter.length <= 2) {
                 console.error('Invalid printer sent by ' + req.body.COMPUTERNAME + ': ' + req.body.printers[i] )
                 continue;
             }
-            sqlprinters.push([req.body.COMPUTERNAME, splitprinter[2], splitprinter[3]]);
+            sqlprinters.push([req.body.COMPUTERNAME, req.body.USERNAME, req.body.USERDOMAIN, req.body.site, userou.join(','), computerou.join(','), req.clientIp, splitprinter[2], splitprinter[3]]);
         }
         let params = {
-            sql: "DELETE FROM `printers` WHERE `COMPUTERNAME` = '" + req.body.COMPUTERNAME + "'",
-            values: [sqlprinters]
+            sql: "DELETE FROM `printers` WHERE `COMPUTERNAME` = ?",
+            values: [req.body.COMPUTERNAME]
         }
         database.query(params, function(err, sql) {
             //console.log(err);
@@ -29,7 +34,7 @@ var appRouter = function (app) {
                 res.status(500).json({result: "error", message: err});
             } else {
                 let params = {
-                    sql: "INSERT INTO `printers` (`computername`, `printserver`, `printername`) VALUES ?",
+                    sql: "INSERT INTO `printers` (`computername`, `username`,  `userdomain`, `site`, `userou`, `computerou`, `ip`, `printserver`, `printername`) VALUES ?",
                     values: [sqlprinters]
                 }
                 database.query(params, function(err, sql) {

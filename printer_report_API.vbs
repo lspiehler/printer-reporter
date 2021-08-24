@@ -1,7 +1,48 @@
 Option Explicit
-'On Error Resume Next
+On Error Resume Next
 
 Dim jsonreq, restReq, url
+
+Function getADSite(json)
+	Dim objADSysInfo
+	
+	Set objADSysInfo = CreateObject("ADSystemInfo")
+
+	'WScript.Echo "Current site name: " & objADSysInfo.SiteName
+	If json = True Then
+		getADSite = vbTab & """site"":""" + objADSysInfo.SiteName + """"
+	Else
+		getADSite = objADSysInfo.SiteName
+	End If
+End Function
+
+Function getADUserDN(json)
+	Dim objSysInfo, objUser
+	
+	Set objSysInfo = CreateObject("ADSystemInfo")
+
+	Set objUser = GetObject("LDAP://" & objSysInfo.UserName)
+	
+	If json = True Then
+		getADUserDN = vbTab & """userdn"":""" + objUser.distinguishedName + """"
+	Else
+		getADUserDN = objUser.distinguishedName
+	End If
+End Function
+
+Function getADComputerDN(json)
+	Dim objSysInfo, objComp
+	
+	Set objSysInfo = CreateObject("ADSystemInfo")
+
+	Set objComp = GetObject("LDAP://" & objSysInfo.ComputerName)
+	
+	If json = True Then
+		getADComputerDN = vbTab & """computerdn"":""" + objComp.distinguishedName + """"
+	Else
+		getADComputerDN = objComp.distinguishedName
+	End If
+End Function
 
 Function getEnvVariable(envvar, json, wait)
 	Dim objShell, wshSystemEnv, value, loopcount
@@ -69,6 +110,11 @@ End Function
 'WScript.Echo getNetworkPrinters(True)
 jsonreq = "{" & vbCrlf & _
 	getEnvVariable("COMPUTERNAME", True, True) & "," & vbCrlf & _
+	getEnvVariable("USERNAME", True, True) & "," & vbCrlf & _
+	getEnvVariable("USERDOMAIN", True, True) & "," & vbCrlf & _
+	getADSite(True) & "," & vbCrlf & _
+	getADComputerDN(True) & "," & vbCrlf & _
+	getADUserDN(True) & "," & vbCrlf & _
 	getNetworkPrinters(True) & _
 	vbCrlf & "}"
 	
