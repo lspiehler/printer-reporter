@@ -22,8 +22,8 @@ var appRouter = function (app) {
             sqlprinters.push([req.body.COMPUTERNAME, req.body.USERNAME, req.body.USERDOMAIN, req.body.site, userou.join(','), computerou.join(','), req.clientIp, splitprinter[2], splitprinter[3]]);
         }
         let params = {
-            sql: "DELETE FROM `printers` WHERE `COMPUTERNAME` = ?",
-            values: [req.body.COMPUTERNAME]
+            sql: "DELETE FROM `printers` WHERE `computername` = ? AND `username`",
+            values: [req.body.COMPUTERNAME, req.body.USERNAME]
         }
         database.query(params, function(err, sql) {
             //console.log(err);
