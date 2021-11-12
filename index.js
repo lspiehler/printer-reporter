@@ -8,7 +8,7 @@ const requestIp = require('request-ip');
 app.use(requestIp.mw())
 
 app.use(express.urlencoded({extended: true})); 
-app.use(express.json());
+//app.use(express.json());
 
 routes(app);
 

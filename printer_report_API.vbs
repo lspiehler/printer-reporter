@@ -1,7 +1,7 @@
 Option Explicit
 On Error Resume Next
 
-Dim jsonreq, restReq, url
+Dim jsonreq, restReq, url, allprinters
 
 Function getADSite(json)
 	Dim objADSysInfo
@@ -17,30 +17,34 @@ Function getADSite(json)
 End Function
 
 Function getADUserDN(json)
-	Dim objSysInfo, objUser
+	Dim objSysInfo, objUser, rawDN
 	
 	Set objSysInfo = CreateObject("ADSystemInfo")
 
 	Set objUser = GetObject("LDAP://" & objSysInfo.UserName)
 	
+	rawDN = Join(Split(objUser.distinguishedName, "\"), "\\")
+	
 	If json = True Then
-		getADUserDN = vbTab & """userdn"":""" + objUser.distinguishedName + """"
+		getADUserDN = vbTab & """userdn"":""" + rawDN + """"
 	Else
-		getADUserDN = objUser.distinguishedName
+		getADUserDN = rawDN
 	End If
 End Function
 
 Function getADComputerDN(json)
-	Dim objSysInfo, objComp
+	Dim objSysInfo, objComp, rawDN
 	
 	Set objSysInfo = CreateObject("ADSystemInfo")
 
 	Set objComp = GetObject("LDAP://" & objSysInfo.ComputerName)
 	
+	rawDN = Join(Split(objComp.distinguishedName, "\"), "\\")
+	
 	If json = True Then
-		getADComputerDN = vbTab & """computerdn"":""" + objComp.distinguishedName + """"
+		getADComputerDN = vbTab & """computerdn"":""" + rawDN + """"
 	Else
-		getADComputerDN = objComp.distinguishedName
+		getADComputerDN = rawDN
 	End If
 End Function
 
@@ -83,60 +87,73 @@ Function getNetworkPrinters(json)
 	For i = 0 to existprinters.Count - 1 Step 1
 		'WScript.Echo existprinters.Item(i)
 		If Left(ucase(existprinters.Item(i)),2) = "\\" Then
-			'WScript.Echo UBound(printers)
-			ReDim Preserve printers(UBound(printers) + 1)
-			printers(UBound(printers)) = Replace(existprinters.Item(i),"\","\\")
-			''WScript.Echo existprinters.Item(i)
-			'WSHNetwork.RemovePrinterConnection existprinters.Item(i+1)
-			'If Not printerArray(current,printers) Then
-				'WScript.Echo("Deleting " + current)
-			'	WSHNetwork.RemovePrinterConnection current
-			'End If
+			If Right(ucase(existprinters.Item(i)),1) <> ":" Then
+				'WScript.Echo UBound(printers)
+				ReDim Preserve printers(UBound(printers) + 1)
+				printers(UBound(printers)) = Replace(existprinters.Item(i),"\","\\")
+				''WScript.Echo existprinters.Item(i)
+				'WSHNetwork.RemovePrinterConnection existprinters.Item(i+1)
+				'If Not printerArray(current,printers) Then
+					'WScript.Echo("Deleting " + current)
+				'	WSHNetwork.RemovePrinterConnection current
+				'End If
+			End If
 		End If
 	Next
 	
-	'WScript.Echo UBound(printers)
-	If json = True Then
-		If UBound(printers) >= 0 Then
-			getNetworkPrinters = vbTab & """printers"": [" & vbCrlf & vbTab & vbTab & """" & Join(printers, """," & vbCrlf & vbTab & vbTab & """") & """" & vbCrlf & vbTab & "]"
+	If UBound(printers) >= 0 Then
+	
+		'WScript.Echo UBound(printers)
+		If json = True Then
+			If UBound(printers) >= 0 Then
+				getNetworkPrinters = vbTab & """printers"": [" & vbCrlf & vbTab & vbTab & """" & Join(printers, """," & vbCrlf & vbTab & vbTab & """") & """" & vbCrlf & vbTab & "]"
+			Else
+				getNetworkPrinters = vbTab & """printers"": []"
+			End If
 		Else
-			getNetworkPrinters = vbTab & """printers"": []"
+			getNetworkPrinters = Join(printers, ",")
 		End If
+		
 	Else
-		getNetworkPrinters = Join(printers, ",")
+		getNetworkPrinters = False
 	End If
 End Function
 
-'WScript.Echo getNetworkPrinters(True)
-jsonreq = "{" & vbCrlf & _
-	getEnvVariable("COMPUTERNAME", True, True) & "," & vbCrlf & _
-	getEnvVariable("USERNAME", True, True) & "," & vbCrlf & _
-	getEnvVariable("USERDOMAIN", True, True) & "," & vbCrlf & _
-	getADSite(True) & "," & vbCrlf & _
-	getADComputerDN(True) & "," & vbCrlf & _
-	getADUserDN(True) & "," & vbCrlf & _
-	getNetworkPrinters(True) & _
-	vbCrlf & "}"
-	
-'WScript.Echo jsonreq
-'WScript.Quit
-	
-	
-Set restReq = CreateObject("Microsoft.XMLHTTP")
+WScript.Sleep 60000
 
-' Replace <node> with the address of your INSTEON device
-' Additionally, any REST command will work here
-url = "https://httpreport.lcmchealth.org/printers"
+allprinters = getNetworkPrinters(True)
 
-' If auth is required, replace the userName and password values
-' with the ones you use on your ISY
-'userName = "admin"
-'password = "<yourpassword>"
+If allprinters Then
+	jsonreq = "{" & vbCrlf & _
+		getEnvVariable("COMPUTERNAME", True, True) & "," & vbCrlf & _
+		getEnvVariable("USERNAME", True, True) & "," & vbCrlf & _
+		getEnvVariable("USERDOMAIN", True, True) & "," & vbCrlf & _
+		getADSite(True) & "," & vbCrlf & _
+		getADComputerDN(True) & "," & vbCrlf & _
+		getADUserDN(True) & "," & vbCrlf & _
+		getNetworkPrinters(True) & _
+		vbCrlf & "}"
+		
+	'WScript.Echo jsonreq
+	'WScript.Quit
+		
+		
+	Set restReq = CreateObject("Microsoft.XMLHTTP")
 
-'restReq.open "GET", url, false, userName, password
-restReq.open "POST", url, false
-restReq.setRequestHeader "Content-Type", "application/json"
-restReq.send jsonreq
+	' Replace <node> with the address of your INSTEON device
+	' Additionally, any REST command will work here
+	url = "https://httpreport.lcmchealth.org/printers"
+
+	' If auth is required, replace the userName and password values
+	' with the ones you use on your ISY
+	'userName = "admin"
+	'password = "<yourpassword>"
+
+	'restReq.open "GET", url, false, userName, password
+	restReq.open "POST", url, false
+	restReq.setRequestHeader "Content-Type", "application/json"
+	restReq.send jsonreq
+End If
 
 'WScript.Echo restReq.responseText
 WScript.Quit
