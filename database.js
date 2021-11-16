@@ -45,7 +45,7 @@ module.exports = {
                 //console.log(query.sql);
                 connection.release();
                 if(err) {
-                    callback(false, { results: results, rows: rows, query: query.sql });
+                    callback(err, { results: results, rows: rows, query: query.sql });
                 } else {
                     callback(false, { results: results, rows: rows, query: query.sql });
                 }

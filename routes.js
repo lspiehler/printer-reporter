@@ -36,46 +36,58 @@ var appRouter = function (app) {
             let sqlprinters = [];
             let userou = body.userdn.split(',OU=');
             userou.shift();
-            //console.log(userou);
+            //console.log(body.default);
             let computerou = body.computerdn.split(',');
             computerou.shift();
+            let defaultprinter = false;
             for(let i = 0; i <= body.printers.length - 1; i++) {
+                if(body.default && body.printers[i].toUpperCase() == body.default.toUpperCase()) {
+                    defaultprinter = true;
+                    console.log('Default printer match: ' + body.printers[i]);
+                } else {
+                    defaultprinter = false;
+                }
                 let splitprinter = body.printers[i].split('\\');
                 if(splitprinter.length <= 2) {
                     console.error('Invalid printer sent by ' + body.COMPUTERNAME + ': ' + body.printers[i] )
                     continue;
                 }
-                sqlprinters.push([body.COMPUTERNAME, body.USERNAME, body.USERDOMAIN, body.site, 'OU=' + userou.join(',OU='), 'OU=' + computerou.join(',OU='), req.clientIp, splitprinter[2], splitprinter[3]]);
+                sqlprinters.push([body.COMPUTERNAME, body.USERNAME, body.USERDOMAIN, body.site, 'OU=' + userou.join(',OU='), 'OU=' + computerou.join(',OU='), req.clientIp, splitprinter[2], splitprinter[3], defaultprinter]);
             }
-            let params = {
-                sql: "DELETE FROM `printers` WHERE `computername` = ? AND `username` = ?",
-                values: [body.COMPUTERNAME, body.USERNAME]
-            }
-            database.query(params, function(err, sql) {
-                //console.log(err);
-                //console.log(sql);
-                if(err) {
-                    console.error(err);
-                    console.error(body);
-                    res.status(500).json({result: "error", message: err});
-                } else {
-                    let params = {
-                        sql: "INSERT INTO `printers` (`computername`, `username`,  `userdomain`, `site`, `userou`, `computerou`, `ip`, `printserver`, `printername`) VALUES ?",
-                        values: [sqlprinters]
-                    }
-                    database.query(params, function(err, sql) {
-                        //console.log(err);
-                        //console.log(sql);
-                        if(err) {
-                            console.error(err);
-                            console.error(body);
-                            res.status(500).json({result: "error", message: err});
-                        } else {
-                            res.status(200).json({result: "success", message: body});
-                        }
-                    });
+            if(sqlprinters.length > 0) {
+                let params = {
+                    sql: "DELETE FROM `printers` WHERE `computername` = ? AND `username` = ?",
+                    values: [body.COMPUTERNAME, body.USERNAME]
                 }
-            });
+                database.query(params, function(err, sql) {
+                    //console.log(err);
+                    //console.log(sql);
+                    if(err) {
+                        console.log(err);
+                        console.log(body);
+                        res.status(500).json({result: "error", message: err});
+                    } else {
+                        let params = {
+                            sql: "INSERT INTO `printers` (`computername`, `username`,  `userdomain`, `site`, `userou`, `computerou`, `ip`, `printserver`, `printername`, `default`) VALUES ?",
+                            values: [sqlprinters]
+                        }
+                        database.query(params, function(err, sql) {
+                            //console.log(err);
+                            //console.log(sql);
+                            if(err) {
+                                console.log(err);
+                                console.log(body);
+                                res.status(500).json({result: "error", message: err});
+                            } else {
+                                res.status(200).json({result: "success", message: body});
+                            }
+                        });
+                    }
+                });
+            } else {
+                console.log("Empty list of printers sent. Please examine post data from " + req.clientIp + ":");
+                console.log(data.toString());
+            }
         });
     });
 }
