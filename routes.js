@@ -25,7 +25,7 @@ var appRouter = function (app) {
             let body;
             try {
                 body = JSON.parse(data.toString());
-                console.log(util.inspect(body, false, null, true /* enable colors */))
+                //console.log(util.inspect(body, false, null, true /* enable colors */))
             } catch(e) {
                 console.log("JSON parse error. Please examine post data from " + req.clientIp + ":");
                 console.log(data.toString());
@@ -34,8 +34,9 @@ var appRouter = function (app) {
             }
         
             let sqlprinters = [];
-            let userou = body.userdn.split(',');
+            let userou = body.userdn.split(',OU=');
             userou.shift();
+            //console.log(userou);
             let computerou = body.computerdn.split(',');
             computerou.shift();
             for(let i = 0; i <= body.printers.length - 1; i++) {
@@ -44,7 +45,7 @@ var appRouter = function (app) {
                     console.error('Invalid printer sent by ' + body.COMPUTERNAME + ': ' + body.printers[i] )
                     continue;
                 }
-                sqlprinters.push([body.COMPUTERNAME, body.USERNAME, body.USERDOMAIN, body.site, userou.join(','), computerou.join(','), req.clientIp, splitprinter[2], splitprinter[3]]);
+                sqlprinters.push([body.COMPUTERNAME, body.USERNAME, body.USERDOMAIN, body.site, 'OU=' + userou.join(',OU='), 'OU=' + computerou.join(',OU='), req.clientIp, splitprinter[2], splitprinter[3]]);
             }
             let params = {
                 sql: "DELETE FROM `printers` WHERE `computername` = ? AND `username` = ?",
