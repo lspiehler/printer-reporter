@@ -47,15 +47,32 @@ definitions:
     properties:
       COMPUTERNAME:
         type: "string"
-        example: "SWAGGER-TEST"
+        example: "COMPUTER-Test"
+      USERNAME:
+        type: "string"
+        example: "User-Test"
+      USERDOMAIN:
+        type: "string"
+        example: "TESTDOMAIN"
+      site:
+        type: "string"
+        example: "TEST"
+      computerdn:
+        type: "string"
+        example: "CN=COMPUTER-Test,OU=Test,DC=lcmchealth,DC=org"
+      userdn:
+        type: "string"
+        example: "CN=User-Test,OU=Test,DC=lcmchealth,DC=org"
+      default:
+        type: "string"
+        example: "\\\\ntprintserver01.touro.com\\ED"
       printers:
         type: "array"
         items:
           type: "string"
         example:
-          - "\\\\servera\\printera"
-          - "\\\\servera\\printerb"
-          - "\\\\serverb\\printera"
+          - "\\\\ntprintserver01.touro.com\\ED"
+          - "\\\\ntprintserver02.touro.com\\ED"
   Response:
     type: "object"
     properties:
