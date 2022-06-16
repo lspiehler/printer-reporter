@@ -55,9 +55,16 @@ var appRouter = function (app) {
                 sqlprinters.push([body.COMPUTERNAME, body.USERNAME, body.USERDOMAIN, body.site, 'OU=' + userou.join(',OU='), 'OU=' + computerou.join(',OU='), req.clientIp, splitprinter[2], splitprinter[3], defaultprinter]);
             }
             if(sqlprinters.length > 0) {
-                let params = {
-                    sql: "DELETE FROM `printers` WHERE `computername` = ? AND `username` = ?",
-                    values: [body.COMPUTERNAME, body.USERNAME]
+                let params = {}
+                if(body.COMPUTERNAME.toUpperCase().indexOf("CTX") == 0) {
+                    params.sql = "DELETE FROM `printers` WHERE `computername` LIKE ? AND `username` = ?",
+                    params.values = ['CTX%', body.USERNAME]
+                } else if(body.COMPUTERNAME.toUpperCase().indexOf("VDI") == 0) {
+                    params.sql = "DELETE FROM `printers` WHERE `computername` LIKE ? AND `username` = ?",
+                    params.values = ['VDI%', body.USERNAME]
+                } else {
+                    params.sql = "DELETE FROM `printers` WHERE `computername` = ? AND `username` = ?",
+                    params.values = [body.COMPUTERNAME, body.USERNAME]
                 }
                 database.query(params, function(err, sql) {
                     //console.log(err);
